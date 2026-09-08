@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import {
+  Cartesian3,
   Color,
   createWorldTerrainAsync,
   Ion,
@@ -42,6 +43,10 @@ export default function useCesiumViewer() {
 
       viewer.scene.globe.baseColor = Color.fromCssColorString("#1769aa");
       viewer.scene.globe.enableLighting = true;
+      viewer.camera.flyTo({
+        destination: Cartesian3.fromDegrees(78.9629, 20.5937, 3_500_000),
+        duration: 0,
+      });
     };
 
     initializeViewer();

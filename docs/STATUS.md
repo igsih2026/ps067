@@ -46,6 +46,7 @@ Tracked against the full backend spec (`docs/backend-spec.md` — the numbered s
 
 - [x] Added a bare CesiumJS viewer rendered by the Vite + React app, using a blue ellipsoid with no terrain, imagery, camera targeting, or application wiring.
 - [x] Replaced the ellipsoid terrain provider with Cesium World Terrain using the local Cesium ion token, vertex normals, water masks, and terrain lighting.
+- [x] Set the initial camera view to the India target region without adding user-triggered camera controls.
 
 
 ## Open decisions

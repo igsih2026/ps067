@@ -44,6 +44,8 @@ Tracked against the full backend spec (`docs/backend-spec.md` — the numbered s
 
 ## Frontend progress
 
+- [x] Added a bare CesiumJS viewer rendered by the Vite + React app, using a blue ellipsoid with no terrain, imagery, camera targeting, or application wiring.
+
 
 ## Open decisions
 

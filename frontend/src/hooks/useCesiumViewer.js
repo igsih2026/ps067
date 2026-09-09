@@ -12,6 +12,9 @@ import {
 } from "cesium";
 import useVizStore from "../store/vizStore";
 
+// Cesium terrain heights are ellipsoidal, so use a small tolerance around sea level.
+const LAND_HEIGHT_THRESHOLD = 10;
+
 export default function useCesiumViewer() {
   const containerRef = useRef(null);
   const [clickMessage, setClickMessage] = useState(null);
@@ -96,7 +99,7 @@ export default function useCesiumViewer() {
                 lon: Number(longitude.toFixed(5)),
               };
 
-              if (height > 0) {
+              if (height > LAND_HEIGHT_THRESHOLD) {
                 showMessage("No ocean data here.");
                 return;
               }

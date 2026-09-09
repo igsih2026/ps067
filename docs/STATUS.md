@@ -48,6 +48,7 @@ Tracked against the full backend spec (`docs/backend-spec.md` — the numbered s
 - [x] Replaced the ellipsoid terrain provider with Cesium World Terrain using the local Cesium ion token, vertex normals, water masks, and terrain lighting.
 - [x] Set the initial camera view to the India target region without adding user-triggered camera controls.
 - [x] Added land/sea click validation using sampled Cesium terrain heights, with accepted ocean coordinates stored and land clicks reported visibly.
+- [x] vizStore.js with full shape, every mock function in api.js (mockFloats, mockFloatProfile, mockColumn, mock flat-slice data, mockVariables)
 
 
 ## Open decisions

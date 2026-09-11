@@ -5,6 +5,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent  # points to backend/
 DATA_RAW_MODEL = BASE_DIR / "data" / "raw" / "model"
+ARGO_DATA_DIR = BASE_DIR / "data" / "raw" / "argo"
 
 # Actual .nc file lives INSIDE the folder copernicusmarine creates.
 SAMPLE_THETAO_PATH = (

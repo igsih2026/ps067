@@ -7,3 +7,21 @@ venv/
 
 # Node.js dependencies
 node_modules/
+
+# Cache (backend/app/cache/ — if it stores generated/derived data)
+backend/app/cache/
+
+# IDE
+.vscode/
+.idea/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Frontend build output (if applicable)
+frontend/dist/
+frontend/build/
+
+# Logs
+*.log

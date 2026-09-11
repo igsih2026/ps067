@@ -2,6 +2,10 @@ import urllib.request
 import pandas as pd
 import os
 from ftplib import FTP 
+import ssl
+import certifi
+
+ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
 
 def download_index():
     target_dir = "/backend/data/raw"       
@@ -31,7 +35,7 @@ def connect_ftp():
     return ftp 
 
 def download_profile(ftp, file_path):
-    local_dir = "backend/data/raw/argo"
+    local_dir = "data/raw/argo"
     os.makedirs(local_dir, exist_ok=True)
     
     # Ensures path components stay consistent across OS types

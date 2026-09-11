@@ -22,15 +22,18 @@ def subset_by_depth(ds, depth=None, depth_min=None, depth_max=None):
     return ds
 
 
+import pandas as pd
 def subset_by_time(ds, time=None, time_start=None, time_end=None):
     if "time" not in ds.coords:
         return ds
     if time is not None:
+        time = pd.Timestamp(time)
+        if time.tzinfo is not None:
+            time = time.tz_localize(None)
         return ds.sel(time=time, method="nearest")
     if time_start is not None and time_end is not None:
-        return ds.sel(time=slice(time_start, time_end))
+        return ds.sel(time=slice(pd.Timestamp(time_start), pd.Timestamp(time_end)))
     return ds
-
 
 def subset_variable(ds, variable):
     if variable not in ds.data_vars:

@@ -6,7 +6,9 @@ from app.processing.subset import full_subset
 from app.normalization.scalar_field import to_common_scalar_field
 from app.processing.colormap import apply_colormap
 from app.cache.memory_cache import get_from_cache, set_in_cache, generate_cache_key
-from app.models.schemas import ScalarFieldResponse
+from app.models.schemas import ScalarFieldResponse, VectorFieldResponse, IsosurfaceMeshResponse
+from app.processing.vector_processor import process_vector_field
+from app.processing.isosurface import extract_isosurface
 
 router = APIRouter()
 
@@ -86,3 +88,53 @@ def get_model_slice(
     except Exception as e:
         adapter.close()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/vectors/{variable}", response_model=VectorFieldResponse)
+def get_vector_field(
+    variable: str = "currents",
+    depth: Optional[float] = Query(None, description="Target depth in meters"),
+    time: Optional[str] = Query(None, description="ISO timestamp"),
+    stride: int = Query(2, description="Spatial downsampling stride")
+):
+    """
+    Returns velocity vectors (U, V, magnitude, flow direction) for ocean current fields.
+    """
+    u_var = "uo"
+    v_var = "vo"
+    filepath = registry.get_filepath(u_var) if u_var in registry.list_variables() else registry.get_filepath(registry.list_variables()[0])
+    adapter = NetCDFModelAdapter(filepath)
+    ds = adapter.get_dataset()
+
+    try:
+        res = process_vector_field(ds, u_variable=u_var, v_variable=v_var, depth=depth, time=time, stride=stride)
+        adapter.close()
+        return res
+    except Exception as e:
+        adapter.close()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/isosurface/{variable}", response_model=IsosurfaceMeshResponse)
+def get_isosurface_mesh(
+    variable: str,
+    isoValue: float = Query(20.0, description="Isosurface threshold value (e.g. 20.0 for isotherm)"),
+):
+    """
+    Computes a 3D Marching Cubes surface mesh for a given target variable threshold.
+    """
+    if variable not in registry.list_variables():
+        raise HTTPException(status_code=404, detail=f"Variable '{variable}' not found.")
+
+    filepath = registry.get_filepath(variable)
+    adapter = NetCDFModelAdapter(filepath)
+    ds = adapter.get_dataset()
+
+    try:
+        res = extract_isosurface(ds, variable=variable, iso_value=isoValue)
+        adapter.close()
+        return res
+    except Exception as e:
+        adapter.close()
+        raise HTTPException(status_code=500, detail=str(e))
+

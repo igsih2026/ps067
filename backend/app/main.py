@@ -18,11 +18,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-from app.api import route_instruments
+from app.api import route_instruments, route_analysis
 # Register API Routers
 app.include_router(metadata_router, prefix="/api", tags=["Metadata"])
 app.include_router(model_router, prefix="/api/model", tags=["Model Visualization"])
 app.include_router(route_instruments.router, prefix="/api/instruments", tags=["Instruments"])
+app.include_router(route_analysis.router, prefix="/api/analysis", tags=["Ocean Analysis"])
+
 
 
 @app.get("/")

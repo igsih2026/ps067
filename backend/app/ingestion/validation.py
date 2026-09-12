@@ -69,3 +69,21 @@ def check_missing_values(ds, variable: str) -> dict:
         "missing_points": missing,
         "missing_percent": round((missing / total) * 100, 2) if total > 0 else 0,
     }
+
+
+def filter_by_qc(values: list, qc_flags: list, allowed_flags: tuple = (1, 2)) -> list:
+    """
+    Filters observation values based on standard oceanographic Quality Control (QC) flags.
+    Default allowed flags are (1 = Good, 2 = Probably Good).
+    Flags 3 (Bad) and 4 (Harmful/Corrupted) are replaced with None / NaN.
+    """
+    if not qc_flags or len(qc_flags) != len(values):
+        return values
+
+    filtered = []
+    for v, qc in zip(values, qc_flags):
+        if qc in allowed_flags:
+            filtered.append(v)
+        else:
+            filtered.append(None)
+    return filtered

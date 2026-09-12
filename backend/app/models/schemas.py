@@ -68,3 +68,59 @@ class InstrumentProfile(InstrumentSummary):
     pressure: List[Optional[float]]
     temperature: List[Optional[float]]
     salinity: List[Optional[float]]
+
+
+# Vector Field Schemas
+class VectorPoint(BaseModel):
+    lat: float
+    lon: float
+    u: Optional[float] = None
+    v: Optional[float] = None
+    magnitude: Optional[float] = None
+    direction: Optional[float] = None
+
+class VectorFieldResponse(BaseModel):
+    variables: dict
+    depth: Optional[float] = None
+    time: Optional[str] = None
+    stride: int
+    vector_count: int
+    vectors: List[VectorPoint]
+
+
+# Isosurface Mesh Schemas
+class IsosurfaceMeshResponse(BaseModel):
+    variable: str
+    isoValue: float
+    vertices: List[List[float]]
+    faces: List[List[int]]
+    normals: Optional[List[List[float]]] = None
+    count: Optional[dict] = None
+
+
+# Water Column & Analysis Schemas
+class DepthValuePair(BaseModel):
+    depth: float
+    value: Optional[float] = None
+
+class WaterColumnResponse(BaseModel):
+    variable: str
+    latitude: float
+    longitude: float
+    time: Optional[str] = None
+    units: str
+    profile: List[DepthValuePair]
+
+class ModelObsComparisonResponse(BaseModel):
+    model_config = {"protected_namespaces": ()}
+    
+    instrument_id: str
+    latitude: float
+    longitude: float
+    variable: str
+    rmse: float
+    bias: float
+    depths: List[float]
+    model_values: List[Optional[float]]
+    obs_values: List[Optional[float]]
+

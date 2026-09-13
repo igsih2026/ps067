@@ -58,6 +58,7 @@ Tracked against the full backend spec (`docs/backend-spec.md` — the numbered s
 - [x] PR3 — default camera view over India, no user-triggered controls yet (Keerat)
 - [x] PR4 — Argo/glider point markers mounted from `useInstrumentData` (currently mock-backed); marker clicks set `selectedInstrumentId` (Keerat)
 - [x] PR5 — land/sea click validation via sampled terrain height; ocean coords stored, land clicks reported visibly (Keerat)
+- [x] PR6 — valid ocean clicks fly the camera to an anchored inspect point and disable camera translation; `releaseAnchor` restores free navigation (Keerat)
 - [x] Day 1 store/mocks — `vizStore.js`, `services/api.js` (mockFloats, mockFloatProfile, mockColumn, mockFlatSlices, mockVoxelGrid, mockVariables) (Gehna)
 - [x] `useInstrumentData.js` — instruments, selectedInstrument, profile, loading/error, selected ID (Gehna)
 - [x] `useModelData.js` — field, slices, voxels, column (auto-fetches in inspect mode), variable metadata (Gehna)

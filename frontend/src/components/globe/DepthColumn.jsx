@@ -119,7 +119,9 @@ export function mountDepthColumn(
     }),
   );
 
-  return () => {
+  const cleanup = () => {
     if (!viewer.isDestroyed()) viewer.scene.primitives.remove(primitive);
   };
+  cleanup.primitive = primitive;
+  return cleanup;
 }

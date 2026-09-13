@@ -60,6 +60,7 @@ Tracked against the full backend spec (`docs/backend-spec.md` — the numbered s
 - [x] PR5 — land/sea click validation via sampled terrain height; ocean coords stored, land clicks reported visibly (Keerat)
 - [x] PR6 — valid ocean clicks fly the camera to an anchored inspect point and disable camera translation; `releaseAnchor` restores free navigation (Keerat)
 - [x] PR7 — inspect-mode depth column rendered as colored box primitives with a 0–2000m depth slider and selected-depth value readout (Keerat)
+- [x] PR8 — Explore/Inspect segmented control wired to store mode; inspect column visibility and camera release are mutually exclusive (Keerat)
 - [x] Day 1 store/mocks — `vizStore.js`, `services/api.js` (mockFloats, mockFloatProfile, mockColumn, mockFlatSlices, mockVoxelGrid, mockVariables) (Gehna)
 - [x] `useInstrumentData.js` — instruments, selectedInstrument, profile, loading/error, selected ID (Gehna)
 - [x] `useModelData.js` — field, slices, voxels, column (auto-fetches in inspect mode), variable metadata (Gehna)

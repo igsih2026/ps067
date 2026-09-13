@@ -68,7 +68,7 @@ Tracked against the full backend spec (`docs/backend-spec.md` — the numbered s
 - [x] `InstrumentMeta.jsx` — instrument type, ID, platform, coordinates, timestamp (Gehna)
 - [ ] `ProfileChart.jsx`, `TimeseriesChart.jsx` — not started (Gehna)
 - [x] PR9 — Explore mode flat-slice fallback with textured depth bands and a box outline (Keerat)
-- [ ] PR10 — voxel primitive + custom shader, single variable (Keerat)
+- [~] PR10 — frontend isosurface renderer wired to backend mesh contract; live variable mapping and dataset validation pending (Keerat)
 - [ ] PR11 — shader generalization (Keerat)
 
 ## Open decisions

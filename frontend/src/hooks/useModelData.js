@@ -3,6 +3,7 @@ import {
   DEFAULT_BBOX,
   fetchColumn,
   fetchFlatSlices,
+  fetchIsosurface,
   fetchModel,
   fetchVariables,
   fetchVoxelGrid,
@@ -18,6 +19,7 @@ import useVizStore from "../store/vizStore";
  *   field      — GET /api/model/{variable} scalar field at current depth
  *   slices     — explore flat-slice bands (when exploreRenderer === "flat-slice")
  *   voxels     — explore voxel grid (when exploreRenderer === "voxel")
+ *   isosurface — backend-generated mesh (when exploreRenderer === "isosurface")
  *   column     — inspect-mode drill-core at anchorPoint
  */
 export default function useModelData({ bbox } = {}) {
@@ -39,6 +41,7 @@ export default function useModelData({ bbox } = {}) {
   const [field, setField] = useState(null);
   const [slices, setSlices] = useState(null);
   const [voxels, setVoxels] = useState(null);
+  const [isosurface, setIsosurface] = useState(null);
   const [column, setColumn] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -75,14 +78,26 @@ export default function useModelData({ bbox } = {}) {
         if (cancelled) return;
         setSlices(nextSlices);
         setVoxels(null);
+        setIsosurface(null);
       } else if (mode === "explore" && exploreRenderer === "voxel") {
         const nextVoxels = await fetchVoxelGrid(variable, { time, bbox: queryBbox });
         if (cancelled) return;
         setVoxels(nextVoxels);
         setSlices(null);
+        setIsosurface(null);
+      } else if (mode === "explore" && exploreRenderer === "isosurface") {
+        const nextIsosurface = await fetchIsosurface(variable, {
+          time,
+          bbox: queryBbox,
+        });
+        if (cancelled) return;
+        setIsosurface(nextIsosurface);
+        setSlices(null);
+        setVoxels(null);
       } else {
         setSlices(null);
         setVoxels(null);
+        setIsosurface(null);
       }
 
       if (mode === "inspect" && anchorLat != null && anchorLon != null) {
@@ -132,6 +147,7 @@ export default function useModelData({ bbox } = {}) {
     field,
     slices,
     voxels,
+    isosurface,
     column,
     loading,
     error,

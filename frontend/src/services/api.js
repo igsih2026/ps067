@@ -473,3 +473,16 @@ export async function fetchVoxelGrid(variable, { time, bbox } = {}) {
   if (!res.ok) throw new Error(`voxel ${res.status}`);
   return res.json();
 }
+
+/** Backend-generated Marching Cubes mesh for Explore isosurface mode. */
+export async function fetchIsosurface(
+  variable,
+  { isoValue = 20, time, bbox } = {},
+) {
+  const params = new URLSearchParams({ isoValue: String(isoValue) });
+  if (time) params.set("time", time);
+  if (bbox) params.set("bbox", `${bbox.west},${bbox.south},${bbox.east},${bbox.north}`);
+  const res = await fetch(`${API_BASE}/model/isosurface/${variable}?${params}`);
+  if (!res.ok) throw new Error(`isosurface ${res.status}`);
+  return res.json();
+}

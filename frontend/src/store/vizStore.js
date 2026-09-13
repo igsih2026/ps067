@@ -24,7 +24,7 @@ const useVizStore = create((set) => ({
   selectedInstrumentId: null, // string | null
 
   // --- explore-mode renderer flag (flat-slice first; voxel is stretch) ---
-  exploreRenderer: "flat-slice", // "flat-slice" | "voxel"
+  exploreRenderer: "flat-slice", // "flat-slice" | "isosurface" | "voxel"
 
   // --- panel / visual controls (Person 2) ---
   opacity: 0.85,

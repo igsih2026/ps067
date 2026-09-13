@@ -16,6 +16,7 @@ import useVizStore from "../store/vizStore";
 import { mountInstrumentMarkers } from "../components/globe/InstrumentMarkers";
 import { mountDepthColumn } from "../components/globe/DepthColumn";
 import { mountExploreSlices } from "../components/globe/ExploreSlices";
+import { mountIsosurface } from "../components/globe/IsosurfaceLayer";
 import useInstrumentData from "./useInstrumentData";
 import useModelData from "./useModelData";
 
@@ -53,6 +54,7 @@ export default function useCesiumViewer() {
     loading: columnLoading,
     error: columnError,
     slices,
+    isosurface,
   } = useModelData();
   instrumentsRef.current = instruments;
 
@@ -272,13 +274,33 @@ export default function useCesiumViewer() {
         slices,
         verticalExaggeration,
       );
+    } else if (
+      viewer &&
+      mode === "explore" &&
+      exploreRenderer === "isosurface" &&
+      isosurface
+    ) {
+      exploreCleanupRef.current = mountIsosurface(
+        viewer,
+        isosurface,
+        variable,
+        verticalExaggeration,
+      );
     }
 
     return () => {
       if (exploreCleanupRef.current) exploreCleanupRef.current();
       exploreCleanupRef.current = null;
     };
-  }, [exploreRenderer, mode, slices, verticalExaggeration, viewerReady]);
+  }, [
+    exploreRenderer,
+    isosurface,
+    mode,
+    slices,
+    variable,
+    verticalExaggeration,
+    viewerReady,
+  ]);
 
   useEffect(() => {
     const primitives = exploreCleanupRef.current?.primitives ?? [];

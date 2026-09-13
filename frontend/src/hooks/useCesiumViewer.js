@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Cartesian3,
   Cartographic,
@@ -23,13 +23,22 @@ export default function useCesiumViewer() {
   const markerCleanupRef = useRef(null);
   const instrumentsRef = useRef([]);
   const [clickMessage, setClickMessage] = useState(null);
-  const setAnchorPoint = useVizStore((state) => state.setAnchorPoint);
   const setLandClickMessage = useVizStore((state) => state.setLandClickMessage);
+  const enterInspect = useVizStore((state) => state.enterInspect);
+  const exitInspect = useVizStore((state) => state.exitInspect);
   const { instruments } = useInstrumentData();
   const setSelectedInstrumentId = useVizStore(
     (state) => state.setSelectedInstrumentId,
   );
   instrumentsRef.current = instruments;
+
+  const releaseAnchor = useCallback(() => {
+    const viewer = viewerRef.current;
+    if (viewer && !viewer.isDestroyed()) {
+      viewer.scene.screenSpaceCameraController.enableTranslate = true;
+    }
+    exitInspect();
+  }, [exitInspect]);
 
   useEffect(() => {
     if (!containerRef.current) return undefined;
@@ -120,11 +129,26 @@ export default function useCesiumViewer() {
                 return;
               }
 
-              setAnchorPoint(coordinates);
+              enterInspect(coordinates.lat, coordinates.lon);
               const message = `Ocean point accepted: ${coordinates.lat.toFixed(5)}°, ${coordinates.lon.toFixed(5)}°`;
               setClickMessage(message);
               setLandClickMessage(message);
               console.log("Accepted ocean point", coordinates);
+
+              viewer.camera.flyTo({
+                destination: Cartesian3.fromDegrees(
+                  coordinates.lon,
+                  coordinates.lat,
+                  650_000,
+                ),
+                duration: 1.5,
+                complete: () => {
+                  if (!cancelled && !viewer.isDestroyed()) {
+                    viewer.scene.screenSpaceCameraController.enableTranslate =
+                      false;
+                  }
+                },
+              });
             })
             .catch(() => {
               showMessage("Unable to validate this globe position.");
@@ -140,6 +164,9 @@ export default function useCesiumViewer() {
     return () => {
       cancelled = true;
       if (inputHandler && !inputHandler.isDestroyed()) inputHandler.destroy();
+      if (viewer && !viewer.isDestroyed()) {
+        viewer.scene.screenSpaceCameraController.enableTranslate = true;
+      }
       if (markerCleanupRef.current) markerCleanupRef.current();
       markerCleanupRef.current = null;
       viewerRef.current = null;
@@ -164,5 +191,5 @@ export default function useCesiumViewer() {
     };
   }, [instruments, setSelectedInstrumentId]);
 
-  return { containerRef, clickMessage };
+  return { containerRef, clickMessage, releaseAnchor };
 }

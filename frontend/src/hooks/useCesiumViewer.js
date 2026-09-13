@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  BoundingSphere,
   Cartesian3,
   Cartographic,
   Color,
   createWorldTerrainAsync,
+  HeadingPitchRange,
   Ion,
   sampleTerrainMostDetailed,
   ScreenSpaceEventHandler,
@@ -12,7 +14,9 @@ import {
 } from "cesium";
 import useVizStore from "../store/vizStore";
 import { mountInstrumentMarkers } from "../components/globe/InstrumentMarkers";
+import { mountDepthColumn } from "../components/globe/DepthColumn";
 import useInstrumentData from "./useInstrumentData";
+import useModelData from "./useModelData";
 
 // Cesium terrain heights are ellipsoidal, so use a small tolerance around sea level.
 const LAND_HEIGHT_THRESHOLD = 10;
@@ -21,15 +25,30 @@ export default function useCesiumViewer() {
   const containerRef = useRef(null);
   const viewerRef = useRef(null);
   const markerCleanupRef = useRef(null);
+  const columnCleanupRef = useRef(null);
   const instrumentsRef = useRef([]);
   const [clickMessage, setClickMessage] = useState(null);
   const setLandClickMessage = useVizStore((state) => state.setLandClickMessage);
+  const setDepth = useVizStore((state) => state.setDepth);
+  const mode = useVizStore((state) => state.mode);
+  const depth = useVizStore((state) => state.depth);
+  const variable = useVizStore((state) => state.variable);
+  const verticalExaggeration = useVizStore(
+    (state) => state.verticalExaggeration,
+  );
+  const anchorPoint = useVizStore((state) => state.anchorPoint);
   const enterInspect = useVizStore((state) => state.enterInspect);
   const exitInspect = useVizStore((state) => state.exitInspect);
   const { instruments } = useInstrumentData();
   const setSelectedInstrumentId = useVizStore(
     (state) => state.setSelectedInstrumentId,
   );
+  const {
+    column,
+    currentVariableMeta,
+    loading: columnLoading,
+    error: columnError,
+  } = useModelData();
   instrumentsRef.current = instruments;
 
   const releaseAnchor = useCallback(() => {
@@ -135,20 +154,22 @@ export default function useCesiumViewer() {
               setLandClickMessage(message);
               console.log("Accepted ocean point", coordinates);
 
-              viewer.camera.flyTo({
-                destination: Cartesian3.fromDegrees(
-                  coordinates.lon,
-                  coordinates.lat,
-                  650_000,
+              viewer.camera.flyToBoundingSphere(
+                new BoundingSphere(
+                  Cartesian3.fromDegrees(coordinates.lon, coordinates.lat, 0),
+                  30_000,
                 ),
-                duration: 1.5,
-                complete: () => {
-                  if (!cancelled && !viewer.isDestroyed()) {
-                    viewer.scene.screenSpaceCameraController.enableTranslate =
-                      false;
-                  }
+                {
+                  offset: new HeadingPitchRange(0, -Math.PI / 5, 250_000),
+                  duration: 1.5,
+                  complete: () => {
+                    if (!cancelled && !viewer.isDestroyed()) {
+                      viewer.scene.screenSpaceCameraController.enableTranslate =
+                        false;
+                    }
+                  },
                 },
-              });
+              );
             })
             .catch(() => {
               showMessage("Unable to validate this globe position.");
@@ -168,7 +189,9 @@ export default function useCesiumViewer() {
         viewer.scene.screenSpaceCameraController.enableTranslate = true;
       }
       if (markerCleanupRef.current) markerCleanupRef.current();
+      if (columnCleanupRef.current) columnCleanupRef.current();
       markerCleanupRef.current = null;
+      columnCleanupRef.current = null;
       viewerRef.current = null;
       if (viewer && !viewer.isDestroyed()) viewer.destroy();
     };
@@ -191,5 +214,47 @@ export default function useCesiumViewer() {
     };
   }, [instruments, setSelectedInstrumentId]);
 
-  return { containerRef, clickMessage, releaseAnchor };
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (columnCleanupRef.current) columnCleanupRef.current();
+    columnCleanupRef.current = null;
+
+    if (viewer && mode === "inspect" && anchorPoint && column) {
+      columnCleanupRef.current = mountDepthColumn(
+        viewer,
+        column,
+        anchorPoint,
+        variable,
+        currentVariableMeta,
+        depth,
+        verticalExaggeration,
+      );
+    }
+
+    return () => {
+      if (columnCleanupRef.current) columnCleanupRef.current();
+      columnCleanupRef.current = null;
+    };
+  }, [
+    anchorPoint,
+    column,
+    currentVariableMeta,
+    depth,
+    mode,
+    variable,
+    verticalExaggeration,
+  ]);
+
+  return {
+    anchorPoint,
+    clickMessage,
+    column,
+    columnError,
+    columnLoading,
+    containerRef,
+    depth,
+    mode,
+    releaseAnchor,
+    setDepth,
+  };
 }

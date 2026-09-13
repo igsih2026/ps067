@@ -11,15 +11,25 @@ import {
   Viewer,
 } from "cesium";
 import useVizStore from "../store/vizStore";
+import { mountInstrumentMarkers } from "../components/globe/InstrumentMarkers";
+import useInstrumentData from "./useInstrumentData";
 
 // Cesium terrain heights are ellipsoidal, so use a small tolerance around sea level.
 const LAND_HEIGHT_THRESHOLD = 10;
 
 export default function useCesiumViewer() {
   const containerRef = useRef(null);
+  const viewerRef = useRef(null);
+  const markerCleanupRef = useRef(null);
+  const instrumentsRef = useRef([]);
   const [clickMessage, setClickMessage] = useState(null);
   const setAnchorPoint = useVizStore((state) => state.setAnchorPoint);
   const setLandClickMessage = useVizStore((state) => state.setLandClickMessage);
+  const { instruments } = useInstrumentData();
+  const setSelectedInstrumentId = useVizStore(
+    (state) => state.setSelectedInstrumentId,
+  );
+  instrumentsRef.current = instruments;
 
   useEffect(() => {
     if (!containerRef.current) return undefined;
@@ -59,6 +69,12 @@ export default function useCesiumViewer() {
           terrainProvider,
           timeline: false,
         });
+        viewerRef.current = viewer;
+        markerCleanupRef.current = mountInstrumentMarkers(
+          viewer,
+          instrumentsRef.current,
+          setSelectedInstrumentId,
+        );
 
         viewer.scene.globe.baseColor = Color.fromCssColorString("#1769aa");
         viewer.scene.globe.enableLighting = true;
@@ -124,9 +140,29 @@ export default function useCesiumViewer() {
     return () => {
       cancelled = true;
       if (inputHandler && !inputHandler.isDestroyed()) inputHandler.destroy();
+      if (markerCleanupRef.current) markerCleanupRef.current();
+      markerCleanupRef.current = null;
+      viewerRef.current = null;
       if (viewer && !viewer.isDestroyed()) viewer.destroy();
     };
   }, []);
+
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || viewer.isDestroyed()) return undefined;
+
+    if (markerCleanupRef.current) markerCleanupRef.current();
+    markerCleanupRef.current = mountInstrumentMarkers(
+      viewer,
+      instruments,
+      setSelectedInstrumentId,
+    );
+
+    return () => {
+      if (markerCleanupRef.current) markerCleanupRef.current();
+      markerCleanupRef.current = null;
+    };
+  }, [instruments, setSelectedInstrumentId]);
 
   return { containerRef, clickMessage };
 }

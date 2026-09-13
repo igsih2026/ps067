@@ -18,7 +18,7 @@ function formatTimestamp(iso) {
 
 /**
  * Instrument ID, type, lat/lon, timestamp for the store's selectedInstrumentId.
- * ProfileChart (Day 3) will sit beside this; keep the data shape identical.
+ * ProfileChart sits in the same dock and reads the same profile payload.
  */
 export default function InstrumentMeta() {
   const { instrumentPanelOpen, clearSelectedInstrument } = usePanelState();

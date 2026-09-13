@@ -56,6 +56,7 @@ export default function useCesiumViewer() {
     if (viewer && !viewer.isDestroyed()) {
       viewer.scene.screenSpaceCameraController.enableTranslate = true;
     }
+    setClickMessage(null);
     exitInspect();
   }, [exitInspect]);
 
@@ -219,7 +220,7 @@ export default function useCesiumViewer() {
     if (columnCleanupRef.current) columnCleanupRef.current();
     columnCleanupRef.current = null;
 
-    if (viewer && mode === "inspect" && anchorPoint && column) {
+    if (viewer && anchorPoint && column) {
       columnCleanupRef.current = mountDepthColumn(
         viewer,
         column,
@@ -240,10 +241,16 @@ export default function useCesiumViewer() {
     column,
     currentVariableMeta,
     depth,
-    mode,
     variable,
     verticalExaggeration,
   ]);
+
+  useEffect(() => {
+    const primitive = columnCleanupRef.current?.primitive;
+    if (primitive && !primitive.isDestroyed()) {
+      primitive.show = mode === "inspect";
+    }
+  }, [mode]);
 
   return {
     anchorPoint,

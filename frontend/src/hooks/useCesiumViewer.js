@@ -15,6 +15,7 @@ import {
 import useVizStore from "../store/vizStore";
 import { mountInstrumentMarkers } from "../components/globe/InstrumentMarkers";
 import { mountDepthColumn } from "../components/globe/DepthColumn";
+import { mountExploreSlices } from "../components/globe/ExploreSlices";
 import useInstrumentData from "./useInstrumentData";
 import useModelData from "./useModelData";
 
@@ -26,8 +27,10 @@ export default function useCesiumViewer() {
   const viewerRef = useRef(null);
   const markerCleanupRef = useRef(null);
   const columnCleanupRef = useRef(null);
+  const exploreCleanupRef = useRef(null);
   const instrumentsRef = useRef([]);
   const [clickMessage, setClickMessage] = useState(null);
+  const [viewerReady, setViewerReady] = useState(false);
   const setLandClickMessage = useVizStore((state) => state.setLandClickMessage);
   const setDepth = useVizStore((state) => state.setDepth);
   const mode = useVizStore((state) => state.mode);
@@ -37,6 +40,7 @@ export default function useCesiumViewer() {
     (state) => state.verticalExaggeration,
   );
   const anchorPoint = useVizStore((state) => state.anchorPoint);
+  const exploreRenderer = useVizStore((state) => state.exploreRenderer);
   const enterInspect = useVizStore((state) => state.enterInspect);
   const exitInspect = useVizStore((state) => state.exitInspect);
   const { instruments } = useInstrumentData();
@@ -48,6 +52,7 @@ export default function useCesiumViewer() {
     currentVariableMeta,
     loading: columnLoading,
     error: columnError,
+    slices,
   } = useModelData();
   instrumentsRef.current = instruments;
 
@@ -99,6 +104,7 @@ export default function useCesiumViewer() {
           timeline: false,
         });
         viewerRef.current = viewer;
+        setViewerReady(true);
         markerCleanupRef.current = mountInstrumentMarkers(
           viewer,
           instrumentsRef.current,
@@ -191,9 +197,12 @@ export default function useCesiumViewer() {
       }
       if (markerCleanupRef.current) markerCleanupRef.current();
       if (columnCleanupRef.current) columnCleanupRef.current();
+      if (exploreCleanupRef.current) exploreCleanupRef.current();
       markerCleanupRef.current = null;
       columnCleanupRef.current = null;
+      exploreCleanupRef.current = null;
       viewerRef.current = null;
+      setViewerReady(false);
       if (viewer && !viewer.isDestroyed()) viewer.destroy();
     };
   }, []);
@@ -250,6 +259,32 @@ export default function useCesiumViewer() {
     if (primitive && !primitive.isDestroyed()) {
       primitive.show = mode === "inspect";
     }
+  }, [mode]);
+
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (exploreCleanupRef.current) exploreCleanupRef.current();
+    exploreCleanupRef.current = null;
+
+    if (viewer && mode === "explore" && exploreRenderer === "flat-slice" && slices) {
+      exploreCleanupRef.current = mountExploreSlices(
+        viewer,
+        slices,
+        verticalExaggeration,
+      );
+    }
+
+    return () => {
+      if (exploreCleanupRef.current) exploreCleanupRef.current();
+      exploreCleanupRef.current = null;
+    };
+  }, [exploreRenderer, mode, slices, verticalExaggeration, viewerReady]);
+
+  useEffect(() => {
+    const primitives = exploreCleanupRef.current?.primitives ?? [];
+    primitives.forEach((primitive) => {
+      if (!primitive.isDestroyed()) primitive.show = mode === "explore";
+    });
   }, [mode]);
 
   return {

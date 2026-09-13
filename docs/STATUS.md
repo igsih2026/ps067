@@ -67,8 +67,7 @@ Tracked against the full backend spec (`docs/backend-spec.md` — the numbered s
 - [x] `usePanelState.js` — panel toggles, selected instrument state, land-click message, mode (Gehna)
 - [x] `InstrumentMeta.jsx` — instrument type, ID, platform, coordinates, timestamp (Gehna)
 - [ ] `ProfileChart.jsx`, `TimeseriesChart.jsx` — not started (Gehna)
-- [ ] PR8 — mode toggle (Keerat)
-- [ ] PR9 — explore mode flat-slice fallback (Keerat)
+- [x] PR9 — Explore mode flat-slice fallback with textured depth bands and a box outline (Keerat)
 - [ ] PR10 — voxel primitive + custom shader, single variable (Keerat)
 - [ ] PR11 — shader generalization (Keerat)
 

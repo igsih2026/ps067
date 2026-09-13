@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  BoundingSphere,
   Cartesian3,
   Cartographic,
   Color,
   createWorldTerrainAsync,
+  HeadingPitchRange,
   Ion,
   sampleTerrainMostDetailed,
   ScreenSpaceEventHandler,
@@ -11,15 +13,57 @@ import {
   Viewer,
 } from "cesium";
 import useVizStore from "../store/vizStore";
+import { mountInstrumentMarkers } from "../components/globe/InstrumentMarkers";
+import { mountDepthColumn } from "../components/globe/DepthColumn";
+import { mountExploreSlices } from "../components/globe/ExploreSlices";
+import useInstrumentData from "./useInstrumentData";
+import useModelData from "./useModelData";
 
 // Cesium terrain heights are ellipsoidal, so use a small tolerance around sea level.
 const LAND_HEIGHT_THRESHOLD = 10;
 
 export default function useCesiumViewer() {
   const containerRef = useRef(null);
+  const viewerRef = useRef(null);
+  const markerCleanupRef = useRef(null);
+  const columnCleanupRef = useRef(null);
+  const exploreCleanupRef = useRef(null);
+  const instrumentsRef = useRef([]);
   const [clickMessage, setClickMessage] = useState(null);
-  const setAnchorPoint = useVizStore((state) => state.setAnchorPoint);
+  const [viewerReady, setViewerReady] = useState(false);
   const setLandClickMessage = useVizStore((state) => state.setLandClickMessage);
+  const setDepth = useVizStore((state) => state.setDepth);
+  const mode = useVizStore((state) => state.mode);
+  const depth = useVizStore((state) => state.depth);
+  const variable = useVizStore((state) => state.variable);
+  const verticalExaggeration = useVizStore(
+    (state) => state.verticalExaggeration,
+  );
+  const anchorPoint = useVizStore((state) => state.anchorPoint);
+  const exploreRenderer = useVizStore((state) => state.exploreRenderer);
+  const enterInspect = useVizStore((state) => state.enterInspect);
+  const exitInspect = useVizStore((state) => state.exitInspect);
+  const { instruments } = useInstrumentData();
+  const setSelectedInstrumentId = useVizStore(
+    (state) => state.setSelectedInstrumentId,
+  );
+  const {
+    column,
+    currentVariableMeta,
+    loading: columnLoading,
+    error: columnError,
+    slices,
+  } = useModelData();
+  instrumentsRef.current = instruments;
+
+  const releaseAnchor = useCallback(() => {
+    const viewer = viewerRef.current;
+    if (viewer && !viewer.isDestroyed()) {
+      viewer.scene.screenSpaceCameraController.enableTranslate = true;
+    }
+    setClickMessage(null);
+    exitInspect();
+  }, [exitInspect]);
 
   useEffect(() => {
     if (!containerRef.current) return undefined;
@@ -59,6 +103,13 @@ export default function useCesiumViewer() {
           terrainProvider,
           timeline: false,
         });
+        viewerRef.current = viewer;
+        setViewerReady(true);
+        markerCleanupRef.current = mountInstrumentMarkers(
+          viewer,
+          instrumentsRef.current,
+          setSelectedInstrumentId,
+        );
 
         viewer.scene.globe.baseColor = Color.fromCssColorString("#1769aa");
         viewer.scene.globe.enableLighting = true;
@@ -104,11 +155,28 @@ export default function useCesiumViewer() {
                 return;
               }
 
-              setAnchorPoint(coordinates);
+              enterInspect(coordinates.lat, coordinates.lon);
               const message = `Ocean point accepted: ${coordinates.lat.toFixed(5)}°, ${coordinates.lon.toFixed(5)}°`;
               setClickMessage(message);
               setLandClickMessage(message);
               console.log("Accepted ocean point", coordinates);
+
+              viewer.camera.flyToBoundingSphere(
+                new BoundingSphere(
+                  Cartesian3.fromDegrees(coordinates.lon, coordinates.lat, 0),
+                  30_000,
+                ),
+                {
+                  offset: new HeadingPitchRange(0, -Math.PI / 5, 250_000),
+                  duration: 1.5,
+                  complete: () => {
+                    if (!cancelled && !viewer.isDestroyed()) {
+                      viewer.scene.screenSpaceCameraController.enableTranslate =
+                        false;
+                    }
+                  },
+                },
+              );
             })
             .catch(() => {
               showMessage("Unable to validate this globe position.");
@@ -124,9 +192,111 @@ export default function useCesiumViewer() {
     return () => {
       cancelled = true;
       if (inputHandler && !inputHandler.isDestroyed()) inputHandler.destroy();
+      if (viewer && !viewer.isDestroyed()) {
+        viewer.scene.screenSpaceCameraController.enableTranslate = true;
+      }
+      if (markerCleanupRef.current) markerCleanupRef.current();
+      if (columnCleanupRef.current) columnCleanupRef.current();
+      if (exploreCleanupRef.current) exploreCleanupRef.current();
+      markerCleanupRef.current = null;
+      columnCleanupRef.current = null;
+      exploreCleanupRef.current = null;
+      viewerRef.current = null;
+      setViewerReady(false);
       if (viewer && !viewer.isDestroyed()) viewer.destroy();
     };
   }, []);
 
-  return { containerRef, clickMessage };
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || viewer.isDestroyed()) return undefined;
+
+    if (markerCleanupRef.current) markerCleanupRef.current();
+    markerCleanupRef.current = mountInstrumentMarkers(
+      viewer,
+      instruments,
+      setSelectedInstrumentId,
+    );
+
+    return () => {
+      if (markerCleanupRef.current) markerCleanupRef.current();
+      markerCleanupRef.current = null;
+    };
+  }, [instruments, setSelectedInstrumentId]);
+
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (columnCleanupRef.current) columnCleanupRef.current();
+    columnCleanupRef.current = null;
+
+    if (viewer && anchorPoint && column) {
+      columnCleanupRef.current = mountDepthColumn(
+        viewer,
+        column,
+        anchorPoint,
+        variable,
+        currentVariableMeta,
+        depth,
+        verticalExaggeration,
+      );
+    }
+
+    return () => {
+      if (columnCleanupRef.current) columnCleanupRef.current();
+      columnCleanupRef.current = null;
+    };
+  }, [
+    anchorPoint,
+    column,
+    currentVariableMeta,
+    depth,
+    variable,
+    verticalExaggeration,
+  ]);
+
+  useEffect(() => {
+    const primitive = columnCleanupRef.current?.primitive;
+    if (primitive && !primitive.isDestroyed()) {
+      primitive.show = mode === "inspect";
+    }
+  }, [mode]);
+
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (exploreCleanupRef.current) exploreCleanupRef.current();
+    exploreCleanupRef.current = null;
+
+    if (viewer && mode === "explore" && exploreRenderer === "flat-slice" && slices) {
+      exploreCleanupRef.current = mountExploreSlices(
+        viewer,
+        slices,
+        verticalExaggeration,
+      );
+    }
+
+    return () => {
+      if (exploreCleanupRef.current) exploreCleanupRef.current();
+      exploreCleanupRef.current = null;
+    };
+  }, [exploreRenderer, mode, slices, verticalExaggeration, viewerReady]);
+
+  useEffect(() => {
+    const primitives = exploreCleanupRef.current?.primitives ?? [];
+    primitives.forEach((primitive) => {
+      if (!primitive.isDestroyed()) primitive.show = mode === "explore";
+    });
+  }, [mode]);
+
+  return {
+    anchorPoint,
+    clickMessage,
+    column,
+    columnError,
+    columnLoading,
+    containerRef,
+    depth,
+    mode,
+    releaseAnchor,
+    setDepth,
+  };
 }

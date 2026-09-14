@@ -21,6 +21,7 @@ import {
 } from "../components/globe/InstrumentMarkers";
 import { mountDepthColumn } from "../components/globe/DepthColumn";
 import { mountExploreSlices } from "../components/globe/ExploreSlices";
+import { mountVoxelVolume } from "../components/globe/VoxelVolume";
 import useInstrumentData from "./useInstrumentData";
 import useModelData from "./useModelData";
 
@@ -33,9 +34,14 @@ export default function useCesiumViewer() {
   const markerCleanupRef = useRef(null);
   const columnCleanupRef = useRef(null);
   const exploreCleanupRef = useRef(null);
+  const voxelCleanupRef = useRef(null);
+  const voxelFramedRef = useRef(false);
+  const previousVariableRef = useRef(null);
   const instrumentsRef = useRef([]);
   const [clickMessage, setClickMessage] = useState(null);
   const [viewerReady, setViewerReady] = useState(false);
+  const [voxelThreshold, setVoxelThreshold] = useState(null);
+  const [exploreActivated, setExploreActivated] = useState(false);
   const setLandClickMessage = useVizStore((state) => state.setLandClickMessage);
   const setDepth = useVizStore((state) => state.setDepth);
   const mode = useVizStore((state) => state.mode);
@@ -44,6 +50,7 @@ export default function useCesiumViewer() {
   const verticalExaggeration = useVizStore(
     (state) => state.verticalExaggeration,
   );
+  const opacity = useVizStore((state) => state.opacity);
   const anchorPoint = useVizStore((state) => state.anchorPoint);
   const exploreRenderer = useVizStore((state) => state.exploreRenderer);
   const enterInspect = useVizStore((state) => state.enterInspect);
@@ -55,9 +62,10 @@ export default function useCesiumViewer() {
   const {
     column,
     currentVariableMeta,
-    loading: columnLoading,
-    error: columnError,
+    loading: modelLoading,
+    error: modelError,
     slices,
+    voxels,
   } = useModelData();
   instrumentsRef.current = instruments;
 
@@ -69,6 +77,11 @@ export default function useCesiumViewer() {
     setClickMessage(null);
     exitInspect();
   }, [exitInspect]);
+
+  const activateExplore = useCallback(() => {
+    setExploreActivated(true);
+    releaseAnchor();
+  }, [releaseAnchor]);
 
   useEffect(() => {
     if (!containerRef.current) return undefined;
@@ -128,10 +141,13 @@ export default function useCesiumViewer() {
 
         viewer.scene.globe.baseColor = Color.fromCssColorString("#1769aa");
         viewer.scene.globe.enableLighting = true;
-        viewer.camera.flyTo({
-          destination: Cartesian3.fromDegrees(78.9629, 20.5937, 3_500_000),
-          duration: 0,
-        });
+        viewer.camera.flyToBoundingSphere(
+          new BoundingSphere(Cartesian3.fromDegrees(78.0, 12.0, 0), 2_000_000),
+          {
+            offset: new HeadingPitchRange(0.15, -Math.PI / 5, 6_000_000),
+            duration: 1.2,
+          },
+        );
 
         inputHandler = new ScreenSpaceEventHandler(viewer.scene.canvas);
         inputHandler.setInputAction(({ position }) => {
@@ -252,9 +268,11 @@ export default function useCesiumViewer() {
       if (markerCleanupRef.current) markerCleanupRef.current();
       if (columnCleanupRef.current) columnCleanupRef.current();
       if (exploreCleanupRef.current) exploreCleanupRef.current();
+      if (voxelCleanupRef.current) voxelCleanupRef.current();
       markerCleanupRef.current = null;
       columnCleanupRef.current = null;
       exploreCleanupRef.current = null;
+      voxelCleanupRef.current = null;
       viewerRef.current = null;
       setViewerReady(false);
       if (viewer && !viewer.isDestroyed()) viewer.destroy();
@@ -316,41 +334,118 @@ export default function useCesiumViewer() {
   }, [mode]);
 
   useEffect(() => {
+    if (previousVariableRef.current === variable) return;
+    previousVariableRef.current = variable;
+    setVoxelThreshold(null);
+  }, [variable]);
+
+  useEffect(() => {
     const viewer = viewerRef.current;
     if (exploreCleanupRef.current) exploreCleanupRef.current();
+    if (voxelCleanupRef.current) voxelCleanupRef.current();
     exploreCleanupRef.current = null;
+    voxelCleanupRef.current = null;
 
-    if (viewer && mode === "explore" && exploreRenderer === "flat-slice" && slices) {
-      exploreCleanupRef.current = mountExploreSlices(
-        viewer,
-        slices,
-        verticalExaggeration,
-      );
+    if (viewer && mode === "explore" && exploreActivated) {
+      if (exploreRenderer === "flat-slice" && slices) {
+        exploreCleanupRef.current = mountExploreSlices(
+          viewer,
+          slices,
+          verticalExaggeration,
+        );
+      }
+
+      if (exploreRenderer === "voxel" && voxels) {
+        voxelCleanupRef.current = mountVoxelVolume(
+          viewer,
+          voxels,
+          voxelThreshold,
+          verticalExaggeration,
+          opacity,
+        );
+        if (voxelThreshold == null) {
+          setVoxelThreshold(voxelCleanupRef.current.minimum);
+        }
+
+        if (!voxelFramedRef.current && voxelCleanupRef.current.boundingSphere) {
+          voxelFramedRef.current = true;
+          const radius = Math.max(
+            voxelCleanupRef.current.boundingSphere.radius,
+            100_000,
+          );
+          viewer.camera.flyToBoundingSphere(
+            voxelCleanupRef.current.boundingSphere,
+            {
+              offset: new HeadingPitchRange(0.12, -Math.PI / 6, radius * 2.4),
+              duration: 1.0,
+            },
+          );
+        }
+      }
     }
 
     return () => {
       if (exploreCleanupRef.current) exploreCleanupRef.current();
+      if (voxelCleanupRef.current) voxelCleanupRef.current();
       exploreCleanupRef.current = null;
+      voxelCleanupRef.current = null;
     };
-  }, [exploreRenderer, mode, slices, verticalExaggeration, viewerReady]);
+  }, [
+    exploreRenderer,
+    exploreActivated,
+    mode,
+    slices,
+    voxels,
+    verticalExaggeration,
+    viewerReady,
+  ]);
+
+  useEffect(() => {
+    if (voxelCleanupRef.current && voxelThreshold != null) {
+      voxelCleanupRef.current.setThreshold(voxelThreshold);
+    }
+  }, [voxelThreshold]);
+
+  useEffect(() => {
+    if (voxelCleanupRef.current) {
+      voxelCleanupRef.current.setOpacity(opacity);
+    }
+  }, [opacity]);
 
   useEffect(() => {
     const primitives = exploreCleanupRef.current?.primitives ?? [];
     primitives.forEach((primitive) => {
       if (!primitive.isDestroyed()) primitive.show = mode === "explore";
     });
+    const voxelPrimitive = voxelCleanupRef.current?.primitive;
+    if (voxelPrimitive && !voxelPrimitive.isDestroyed()) {
+      voxelPrimitive.show = mode === "explore";
+    }
   }, [mode]);
 
   return {
     anchorPoint,
+    activateExplore,
     clickMessage,
     column,
-    columnError,
-    columnLoading,
+    columnError: modelError,
+    columnLoading: modelLoading,
     containerRef,
+    currentVariableMeta,
     depth,
+    exploreActivated,
     mode,
     releaseAnchor,
     setDepth,
+    setVoxelThreshold,
+    voxelError: modelError,
+    voxelLoading: modelLoading && mode === "explore" && exploreRenderer === "voxel",
+    voxelRange: voxels
+      ? {
+          min: Number(voxels.min ?? voxels.colorbar?.min),
+          max: Number(voxels.max ?? voxels.colorbar?.max),
+        }
+      : null,
+    voxelThreshold,
   };
 }

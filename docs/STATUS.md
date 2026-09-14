@@ -71,6 +71,7 @@ Tracked against the full backend spec (`docs/backend-spec.md` — the numbered s
 - [ ] PR10 — voxel primitive + custom shader, single variable (Keerat)
 - [ ] PR11 — shader generalization (Keerat)
 - [x] Marker click-through fix — explore flat-slice primitives no longer intercept instrument marker picks (Keerat)
+- [x] Cesium World Imagery added as the globe base layer while preserving terrain and lighting (Keerat)
 
 ## Open decisions
 

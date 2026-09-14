@@ -4,8 +4,10 @@ import {
   Cartesian3,
   Cartographic,
   Color,
+  createWorldImageryAsync,
   createWorldTerrainAsync,
   HeadingPitchRange,
+  ImageryLayer,
   Ion,
   sampleTerrainMostDetailed,
   ScreenSpaceEventHandler,
@@ -94,7 +96,6 @@ export default function useCesiumViewer() {
 
         viewer = new Viewer(containerRef.current, {
           animation: false,
-          baseLayer: false,
           baseLayerPicker: false,
           fullscreenButton: false,
           geocoder: false,
@@ -106,6 +107,17 @@ export default function useCesiumViewer() {
           terrainProvider,
           timeline: false,
         });
+
+        const worldImageryLayer = await ImageryLayer.fromProviderAsync(
+          createWorldImageryAsync(),
+        );
+        if (cancelled) {
+          viewer.destroy();
+          return;
+        }
+        viewer.imageryLayers.removeAll();
+        viewer.imageryLayers.add(worldImageryLayer);
+
         viewerRef.current = viewer;
         setViewerReady(true);
         markerCleanupRef.current = mountInstrumentMarkers(

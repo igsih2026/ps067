@@ -10,12 +10,27 @@ import {
 } from "cesium";
 
 const DATA_SOURCE_NAME = "instrument-markers";
+const MARKER_ID_PREFIX = "instrument-marker-";
 const ARGO_COLOR = Color.fromCssColorString("#1f78b4");
 const GLIDER_COLOR = Color.fromCssColorString("#ef6c5b");
 
-function getInstrumentId(entity) {
+export function getInstrumentId(entity) {
+  if (typeof entity === "string") {
+    return entity.startsWith(MARKER_ID_PREFIX)
+      ? entity.slice(MARKER_ID_PREFIX.length)
+      : entity;
+  }
+
   const property = entity?.properties?.instrumentId;
-  return property?.getValue?.(JulianDate.now()) ?? entity?.id ?? null;
+  const instrumentId =
+    property?.getValue?.(JulianDate.now()) ?? property ?? entity?.id ?? null;
+  return typeof instrumentId === "string" && instrumentId.startsWith(MARKER_ID_PREFIX)
+    ? instrumentId.slice(MARKER_ID_PREFIX.length)
+    : instrumentId;
+}
+
+export function getInstrumentIdFromPickedObject(pickedObject) {
+  return getInstrumentId(pickedObject?.id);
 }
 
 /**
@@ -53,9 +68,27 @@ export function mountInstrumentMarkers(viewer, instruments, onSelect) {
 
   viewer.dataSources.add(dataSource);
   inputHandler.setInputAction(({ position }) => {
-    const pickedObject = viewer.scene.pick(position);
-    const instrumentId = getInstrumentId(pickedObject?.id);
-    if (instrumentId) onSelect(instrumentId);
+    const rawPickedObject = viewer.scene.pick(position);
+    const pickedObjects = viewer.scene.drillPick(position);
+    console.log("[marker-debug] marker handler raw pick", {
+      pickedObject: rawPickedObject,
+      pickedType: rawPickedObject?.constructor?.name ?? null,
+      pickedId: rawPickedObject?.id ?? null,
+      pickedPrimitive: rawPickedObject?.primitive ?? null,
+      drillPickResults: pickedObjects,
+    });
+    const instrumentId = pickedObjects
+      .map(getInstrumentIdFromPickedObject)
+      .find(Boolean);
+    if (instrumentId) {
+      console.log("[marker-debug] marker handler path: entity-selected", {
+        instrumentId,
+      });
+      onSelect(instrumentId);
+      return;
+    }
+
+    console.log("[marker-debug] marker handler path: no-instrument-entity");
   }, ScreenSpaceEventType.LEFT_CLICK);
 
   return () => {

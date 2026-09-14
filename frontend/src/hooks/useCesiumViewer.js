@@ -13,7 +13,10 @@ import {
   Viewer,
 } from "cesium";
 import useVizStore from "../store/vizStore";
-import { mountInstrumentMarkers } from "../components/globe/InstrumentMarkers";
+import {
+  getInstrumentIdFromPickedObject,
+  mountInstrumentMarkers,
+} from "../components/globe/InstrumentMarkers";
 import { mountDepthColumn } from "../components/globe/DepthColumn";
 import { mountExploreSlices } from "../components/globe/ExploreSlices";
 import useInstrumentData from "./useInstrumentData";
@@ -123,10 +126,36 @@ export default function useCesiumViewer() {
           if (cancelled) return;
 
           const pickedObject = viewer.scene.pick(position);
-          if (pickedObject?.id) return;
+          const pickedObjects = viewer.scene.drillPick(position);
+          console.log("[marker-debug] globe click raw pick", {
+            pickedObject,
+            pickedType: pickedObject?.constructor?.name ?? null,
+            pickedId: pickedObject?.id ?? null,
+            pickedPrimitive: pickedObject?.primitive ?? null,
+            drillPickResults: pickedObjects,
+          });
+          const instrumentId = pickedObjects
+            .map(getInstrumentIdFromPickedObject)
+            .find(Boolean);
+          if (instrumentId) {
+            console.log("[marker-debug] path: entity-selected", {
+              instrumentId,
+            });
+            setSelectedInstrumentId(instrumentId);
+            return;
+          }
+          if (pickedObject?.id) {
+            console.log("[marker-debug] path: picked-object-without-instrument-id", {
+              pickedObject,
+            });
+            return;
+          }
+
+          console.log("[marker-debug] path: land/sea-validated");
 
           const pickedCartesian = viewer.scene.pickPosition(position);
           if (!pickedCartesian) {
+            console.log("[marker-debug] land/sea-validated result: no-cartesian");
             showMessage("Unable to determine a globe position.");
             return;
           }
@@ -141,6 +170,9 @@ export default function useCesiumViewer() {
 
               const height = sampledPoint?.height;
               if (!Number.isFinite(height)) {
+                console.log("[marker-debug] land/sea-validated result: invalid-height", {
+                  height,
+                });
                 showMessage("Unable to validate this globe position.");
                 return;
               }
@@ -151,9 +183,18 @@ export default function useCesiumViewer() {
               };
 
               if (height > LAND_HEIGHT_THRESHOLD) {
+                console.log("[marker-debug] land/sea-validated result: land", {
+                  height,
+                  coordinates,
+                });
                 showMessage("No ocean data here.");
                 return;
               }
+
+              console.log("[marker-debug] land/sea-validated result: ocean", {
+                height,
+                coordinates,
+              });
 
               enterInspect(coordinates.lat, coordinates.lon);
               const message = `Ocean point accepted: ${coordinates.lat.toFixed(5)}°, ${coordinates.lon.toFixed(5)}°`;
@@ -179,6 +220,7 @@ export default function useCesiumViewer() {
               );
             })
             .catch(() => {
+              console.log("[marker-debug] land/sea-validated result: sampling-error");
               showMessage("Unable to validate this globe position.");
             });
         }, ScreenSpaceEventType.LEFT_CLICK);

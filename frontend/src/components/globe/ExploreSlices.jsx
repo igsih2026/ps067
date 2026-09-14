@@ -51,6 +51,7 @@ export function mountExploreSlices(
     });
     return viewer.scene.primitives.add(
       new Primitive({
+        allowPicking: false,
         appearance: new MaterialAppearance({
           faceForward: true,
           flat: true,
@@ -93,6 +94,7 @@ export function mountExploreSlices(
 
   const outline = viewer.scene.primitives.add(
     new Primitive({
+      allowPicking: false,
       appearance: new PolylineColorAppearance({
         translucent: true,
       }),

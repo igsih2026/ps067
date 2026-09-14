@@ -70,6 +70,7 @@ Tracked against the full backend spec (`docs/backend-spec.md` — the numbered s
 - [x] PR9 — Explore mode flat-slice fallback with textured depth bands and a box outline (Keerat)
 - [ ] PR10 — voxel primitive + custom shader, single variable (Keerat)
 - [ ] PR11 — shader generalization (Keerat)
+- [x] Marker click-through fix — explore flat-slice primitives no longer intercept instrument marker picks (Keerat)
 
 ## Open decisions
 

@@ -4,6 +4,7 @@ import useVizStore from "../../store/vizStore";
 
 export default function CesiumViewer() {
   const {
+    activateExplore,
     anchorPoint,
     clickMessage,
     column,
@@ -12,8 +13,8 @@ export default function CesiumViewer() {
     containerRef,
     currentVariableMeta,
     depth,
+    exploreActivated,
     mode,
-    releaseAnchor,
     setDepth,
     setVoxelThreshold,
     voxelError,
@@ -70,7 +71,7 @@ export default function CesiumViewer() {
 
   const handleModeChange = (nextMode) => {
     if (nextMode === "explore") {
-      releaseAnchor();
+      activateExplore();
       return;
     }
     setMode("inspect");
@@ -118,7 +119,7 @@ export default function CesiumViewer() {
           );
         })}
       </div>
-      {mode === "explore" && (
+      {mode === "explore" && exploreActivated && (
         <div
           role="group"
           aria-label="Explore renderer"

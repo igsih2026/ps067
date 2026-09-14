@@ -41,6 +41,7 @@ export default function useCesiumViewer() {
   const [clickMessage, setClickMessage] = useState(null);
   const [viewerReady, setViewerReady] = useState(false);
   const [voxelThreshold, setVoxelThreshold] = useState(null);
+  const [exploreActivated, setExploreActivated] = useState(false);
   const setLandClickMessage = useVizStore((state) => state.setLandClickMessage);
   const setDepth = useVizStore((state) => state.setDepth);
   const mode = useVizStore((state) => state.mode);
@@ -76,6 +77,11 @@ export default function useCesiumViewer() {
     setClickMessage(null);
     exitInspect();
   }, [exitInspect]);
+
+  const activateExplore = useCallback(() => {
+    setExploreActivated(true);
+    releaseAnchor();
+  }, [releaseAnchor]);
 
   useEffect(() => {
     if (!containerRef.current) return undefined;
@@ -135,10 +141,13 @@ export default function useCesiumViewer() {
 
         viewer.scene.globe.baseColor = Color.fromCssColorString("#1769aa");
         viewer.scene.globe.enableLighting = true;
-        viewer.camera.flyTo({
-          destination: Cartesian3.fromDegrees(78.9629, 20.5937, 3_500_000),
-          duration: 0,
-        });
+        viewer.camera.flyToBoundingSphere(
+          new BoundingSphere(Cartesian3.fromDegrees(78.0, 12.0, 0), 2_000_000),
+          {
+            offset: new HeadingPitchRange(0.15, -Math.PI / 5, 6_000_000),
+            duration: 1.2,
+          },
+        );
 
         inputHandler = new ScreenSpaceEventHandler(viewer.scene.canvas);
         inputHandler.setInputAction(({ position }) => {
@@ -337,7 +346,7 @@ export default function useCesiumViewer() {
     exploreCleanupRef.current = null;
     voxelCleanupRef.current = null;
 
-    if (viewer && mode === "explore") {
+    if (viewer && mode === "explore" && exploreActivated) {
       if (exploreRenderer === "flat-slice" && slices) {
         exploreCleanupRef.current = mountExploreSlices(
           viewer,
@@ -383,6 +392,7 @@ export default function useCesiumViewer() {
     };
   }, [
     exploreRenderer,
+    exploreActivated,
     mode,
     slices,
     voxels,
@@ -415,6 +425,7 @@ export default function useCesiumViewer() {
 
   return {
     anchorPoint,
+    activateExplore,
     clickMessage,
     column,
     columnError: modelError,
@@ -422,6 +433,7 @@ export default function useCesiumViewer() {
     containerRef,
     currentVariableMeta,
     depth,
+    exploreActivated,
     mode,
     releaseAnchor,
     setDepth,

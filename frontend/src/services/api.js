@@ -446,7 +446,7 @@ export async function fetchColumn({ lat, lon, time } = {}) {
   if (USE_MOCK) return mockColumn({ lat, lon, time });
   // placeholder until backend exposes a column/profile-at-point route
   const res = await fetch(
-    `${API_BASE}/model/column?lat=${lat}&lon=${lon}&time=${encodeURIComponent(time ?? "")}`,
+    `${API_BASE}/analysis/column?lat=${lat}&lon=${lon}&time=${encodeURIComponent(time ?? "")}`,
   );
   if (!res.ok) throw new Error(`column ${res.status}`);
   return res.json();

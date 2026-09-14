@@ -1,21 +1,29 @@
 /* ==========================================================================
-   Panel design tokens
+   Panel design tokens polish panel styling:
    Theme: deep-ocean instrument panel — dark navy field, teal readouts,
    monospace for numeric values (this is a scientific tool, not a SaaS card).
    ========================================================================== */
 :root {
   --panel-bg: #0f1e2b;
   --panel-bg-raised: #142a3b;
+  --panel-bg-hover: #1a3247;
   --panel-border: #1f3548;
+  --panel-border-soft: #182c3d;
   --panel-accent: #4fd8c4;
   --panel-accent-dim: #2c6b62;
   --panel-warn: #ff9f5a;
   --panel-text: #e8eef2;
   --panel-text-dim: #7f97a6;
-  --panel-radius: 3px;
+  --panel-radius: 5px;
+  --panel-radius-sm: 3px;
   --panel-font-ui: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   --panel-font-mono: "IBM Plex Mono", "SF Mono", Menlo, monospace;
   --panel-width: 300px;
+  --panel-space-xs: 6px;
+  --panel-space-sm: 10px;
+  --panel-space-md: 18px;
+  --panel-space-lg: 24px;
+  --panel-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* ==========================================================================
@@ -27,23 +35,24 @@
   bottom: 0;
   width: var(--panel-width);
   background: var(--panel-bg);
-  border-color: var(--panel-border);
   font-family: var(--panel-font-ui);
   color: var(--panel-text);
   z-index: 20;
-  transition: transform 220ms ease;
+  transition: transform 280ms var(--panel-ease);
   display: flex;
 }
 
 .panel--left {
   left: 0;
   border-right: 1px solid var(--panel-border);
+  box-shadow: 4px 0 24px -8px rgba(0, 0, 0, 0.45);
 }
 
 .panel--right {
   right: 0;
   border-left: 1px solid var(--panel-border);
   flex-direction: row-reverse;
+  box-shadow: -4px 0 24px -8px rgba(0, 0, 0, 0.45);
 }
 
 .panel--closed.panel--left {
@@ -57,21 +66,43 @@
 .panel__inner {
   flex: 1;
   overflow-y: auto;
-  padding: 20px 18px 32px;
+  overflow-x: hidden;
+  padding: var(--panel-space-lg) 20px 32px;
+  /* fades content out as the panel collapses, instead of an abrupt cut */
+  transition: opacity 200ms var(--panel-ease);
+}
+
+.panel--closed .panel__inner {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* thin, unobtrusive scrollbar so the panel still reads as an instrument
+   surface rather than a generic scrollable web page */
+.panel__inner::-webkit-scrollbar {
+  width: 6px;
+}
+.panel__inner::-webkit-scrollbar-thumb {
+  background: var(--panel-border);
+  border-radius: 3px;
+}
+.panel__inner::-webkit-scrollbar-thumb:hover {
+  background: var(--panel-accent-dim);
 }
 
 .panel__title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--panel-text);
-  margin: 0 0 18px;
-  padding-bottom: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--panel-text-dim);
+  margin: 0 0 var(--panel-space-md);
+  padding-bottom: var(--panel-space-sm);
   border-bottom: 1px solid var(--panel-border);
 }
 
 .panel__section {
-  margin-bottom: 22px;
+  margin-bottom: var(--panel-space-lg);
 }
 
 .panel__section:last-child {
@@ -102,21 +133,36 @@
 
 .panel-toggle:hover {
   color: var(--panel-accent);
+  background: var(--panel-bg-hover);
+}
+
+.panel-toggle:active {
   background: var(--panel-bg);
 }
 
 .panel-toggle__arrow {
   font-size: 16px;
   line-height: 1;
+  display: inline-block;
+  transition: transform 280ms var(--panel-ease);
+}
+
+.panel-toggle:hover .panel-toggle__arrow {
+  transform: scale(1.15);
 }
 
 /* ==========================================================================
    Shared control primitives
    ========================================================================== */
+.control {
+  transition: opacity 150ms ease;
+}
+
 .control__label {
   font-size: 12px;
   color: var(--panel-text-dim);
   font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 .control__header {
@@ -130,11 +176,12 @@
   font-family: var(--panel-font-mono);
   font-size: 12px;
   color: var(--panel-accent);
+  font-variant-numeric: tabular-nums;
 }
 
 .control--select .control__label {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: var(--panel-space-xs);
 }
 
 .control__select,
@@ -142,11 +189,18 @@
   width: 100%;
   background: var(--panel-bg-raised);
   border: 1px solid var(--panel-border);
-  border-radius: var(--panel-radius);
+  border-radius: var(--panel-radius-sm);
   color: var(--panel-text);
   font-family: var(--panel-font-ui);
   font-size: 13px;
-  padding: 7px 9px;
+  padding: 8px 10px;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.control__select:hover,
+.control__number:hover {
+  border-color: var(--panel-accent-dim);
+  background: var(--panel-bg-hover);
 }
 
 .control__select:focus-visible,
@@ -160,6 +214,7 @@
   font-size: 11px;
   color: var(--panel-warn);
   margin: 0;
+  line-height: 1.5;
 }
 
 .control__reset {
@@ -169,10 +224,12 @@
   font-size: 11px;
   cursor: pointer;
   padding: 0;
+  transition: opacity 150ms ease;
 }
 
 .control__reset:hover {
   text-decoration: underline;
+  opacity: 0.85;
 }
 
 .control__unit {
@@ -191,6 +248,12 @@
   background: var(--panel-border);
   border-radius: 2px;
   outline: none;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.control__range:hover {
+  background: var(--panel-accent-dim);
 }
 
 .control__range::-webkit-slider-thumb {
@@ -202,6 +265,12 @@
   cursor: pointer;
   border: 2px solid var(--panel-bg);
   box-shadow: 0 0 0 1px var(--panel-accent-dim);
+  transition: transform 150ms var(--panel-ease), box-shadow 150ms ease;
+}
+
+.control__range::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 4px rgba(79, 216, 196, 0.18);
 }
 
 .control__range::-moz-range-thumb {
@@ -211,6 +280,11 @@
   background: var(--panel-accent);
   cursor: pointer;
   border: 2px solid var(--panel-bg);
+  transition: transform 150ms var(--panel-ease);
+}
+
+.control__range::-moz-range-thumb:hover {
+  transform: scale(1.2);
 }
 
 .control__range-labels {
@@ -227,15 +301,16 @@
    ========================================================================== */
 .colorbar__preview {
   height: 12px;
-  border-radius: var(--panel-radius);
+  border-radius: var(--panel-radius-sm);
   margin-bottom: 12px;
   background: linear-gradient(90deg, #1b2a52, #2c6b62, #4fd8c4, #ffd166, #ff9f5a);
+  border: 1px solid var(--panel-border-soft);
 }
 
 .colorbar__row {
   display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: var(--panel-space-sm);
+  margin-bottom: var(--panel-space-sm);
 }
 
 .colorbar__field {
@@ -260,7 +335,7 @@
   gap: 9px;
   color: var(--panel-text-dim);
   font-size: 12px;
-  padding: 10px 0;
+  padding: var(--panel-space-sm) 0;
 }
 
 .loader__spinner {
@@ -287,7 +362,10 @@
   .loader__spinner {
     animation: none;
   }
-  .panel {
+  .panel,
+  .panel__inner,
+  .panel-toggle__arrow,
+  .control__range::-webkit-slider-thumb {
     transition: none;
   }
 }
@@ -298,7 +376,7 @@
 .error-boundary {
   background: var(--panel-bg-raised);
   border: 1px solid var(--panel-warn);
-  border-radius: var(--panel-radius);
+  border-radius: var(--panel-radius-sm);
   padding: 14px;
   font-size: 12px;
 }
@@ -313,17 +391,18 @@
   color: var(--panel-text-dim);
   font-family: var(--panel-font-mono);
   font-size: 11px;
-  margin: 0 0 10px;
+  margin: 0 0 var(--panel-space-sm);
 }
 
 .error-boundary__retry {
   background: transparent;
   border: 1px solid var(--panel-warn);
   color: var(--panel-warn);
-  border-radius: var(--panel-radius);
+  border-radius: var(--panel-radius-sm);
   padding: 5px 10px;
   font-size: 11px;
   cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
 }
 
 .error-boundary__retry:hover {

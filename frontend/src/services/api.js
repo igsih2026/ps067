@@ -12,7 +12,7 @@
  * hooks/store should not need to change.
  */
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 const API_BASE = import.meta.env?.VITE_API_BASE ?? "/api";
 
 /** Arabian Sea / Bay of Bengal focus (matches India camera region) */

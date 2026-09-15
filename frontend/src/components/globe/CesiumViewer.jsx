@@ -244,7 +244,7 @@ export default function CesiumViewer() {
         <div
           style={{
             position: "absolute",
-            right: "2 rem",
+            right: "2rem",
             bottom: "1rem",
             width: "min(20rem, calc(100vw - 2rem))",
             padding: "1rem",

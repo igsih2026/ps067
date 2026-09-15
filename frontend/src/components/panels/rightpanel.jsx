@@ -10,7 +10,6 @@ export default function RightPanel() {
 
   return (
     <aside className={`panel panel--right ${isOpen ? "panel--open" : "panel--closed"}`}>
-      <PanelToggleButton side="right" />
       <div className="panel__inner">
         <h2 className="panel__title">Display</h2>
         <div className="panel__section">
@@ -23,6 +22,7 @@ export default function RightPanel() {
           <VerticalExaggerationSlider />
         </div>
       </div>
+      <PanelToggleButton side="right" />
     </aside>
   );
 }

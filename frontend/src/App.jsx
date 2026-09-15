@@ -4,6 +4,7 @@ import RightPanel from "./components/panels/rightpanel";
 import InstrumentMeta from "./components/panels/instrument-profile/InstrumentMeta";
 import ProfileChart from "./components/panels/instrument-profile/ProfileChart";
 import TimeseriesChart from "./components/panels/instrument-profile/TimeseriesChart";
+import ParameterSummaryPanel from "./components/panels/ParameterSummaryPanel";
 import usePanelState from "./hooks/usePanelState";
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
           <TimeseriesChart />
         </div>
       ) : null}
+      <ParameterSummaryPanel />
     </>
   );
 }

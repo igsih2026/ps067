@@ -18,8 +18,9 @@ export default function ParameterSummaryPanel() {
   const exploreRenderer = useVizStore((state) => state.exploreRenderer);
   const selectedInstrumentId = useVizStore((state) => state.selectedInstrumentId);
   
-  // Panel state
-  const { depth } = usePanelState();
+  // Panel state hook
+  const panelState = usePanelState();
+  const depth = panelState?.depth || 0;
 
   // Variable metadata mapping
   const variableMetadata = useMemo(() => ({
@@ -131,21 +132,22 @@ export default function ParameterSummaryPanel() {
 
   return (
     <div
+      className="parameter-summary-panel"
       style={{
         position: "fixed",
         bottom: 0,
         left: 0,
         right: 0,
-        height: "15vh",
-        minHeight: "120px",
-        maxHeight: "200px",
-        backgroundColor: "rgba(8, 32, 50, 0.95)",
-        color: "#e8f1f8",
-        borderTop: "2px solid #7bdff2",
+        height: "var(--summary-panel-height)",
+        minHeight: "var(--summary-panel-min-height)",
+        maxHeight: "var(--summary-panel-max-height)",
+        backgroundColor: "var(--summary-panel-bg)",
+        color: "var(--summary-panel-text)",
+        borderTop: "var(--summary-panel-border)",
         padding: "1rem",
         overflowY: "auto",
-        zIndex: 100,
-        boxShadow: "0 -4px 12px rgba(0, 0, 0, 0.3)",
+        zIndex: "var(--summary-panel-z-index)",
+        boxShadow: "var(--summary-panel-shadow)",
         fontFamily: "system-ui, -apple-system, sans-serif",
         backdropFilter: "blur(8px)",
       }}
@@ -156,7 +158,7 @@ export default function ParameterSummaryPanel() {
           style={{
             fontSize: "0.9rem",
             lineHeight: 1.5,
-            color: "#7bdff2",
+            color: "var(--summary-panel-accent)",
             fontWeight: 500,
             textAlign: "left",
             wordWrap: "break-word",
@@ -168,6 +170,7 @@ export default function ParameterSummaryPanel() {
 
       {/* Parameter Grid */}
       <div
+        className="parameter-grid"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
@@ -178,6 +181,7 @@ export default function ParameterSummaryPanel() {
         {parameterItems.map((item, idx) => (
           <div
             key={idx}
+            className="parameter-item"
             style={{
               backgroundColor: "rgba(123, 223, 242, 0.08)",
               border: "1px solid rgba(123, 223, 242, 0.2)",
@@ -191,7 +195,7 @@ export default function ParameterSummaryPanel() {
             <div
               style={{
                 fontWeight: 700,
-                color: "#7bdff2",
+                color: "var(--summary-panel-accent)",
                 marginBottom: "0.25rem",
                 textTransform: "uppercase",
                 letterSpacing: "0.5px",
@@ -203,14 +207,14 @@ export default function ParameterSummaryPanel() {
             {/* Parameter Value */}
             <div
               style={{
-                color: "#f4c95d",
+                color: "var(--summary-panel-value)",
                 fontWeight: 600,
                 marginBottom: "0.25rem",
               }}
             >
               {item.value}
               {item.unit && (
-                <span style={{ color: "#b0d9e8", fontWeight: 400, marginLeft: "0.25rem" }}>
+                <span style={{ color: "var(--summary-panel-detail)", fontWeight: 400, marginLeft: "0.25rem" }}>
                   {item.unit}
                 </span>
               )}
@@ -219,7 +223,7 @@ export default function ParameterSummaryPanel() {
             {/* Explanation Text */}
             <div
               style={{
-                color: "#b0d9e8",
+                color: "var(--summary-panel-detail)",
                 fontSize: "0.7rem",
                 opacity: 0.85,
                 fontStyle: "italic",

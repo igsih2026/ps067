@@ -24,6 +24,19 @@
   --panel-space-md: 18px;
   --panel-space-lg: 24px;
   --panel-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Summary Panel specific variables */
+  --summary-panel-height: 15vh;
+  --summary-panel-min-height: 120px;
+  --summary-panel-max-height: 200px;
+  --summary-panel-bg: rgba(8, 32, 50, 0.95);
+  --summary-panel-border: 2px solid #7bdff2;
+  --summary-panel-text: #e8f1f8;
+  --summary-panel-accent: #7bdff2;
+  --summary-panel-value: #f4c95d;
+  --summary-panel-detail: #b0d9e8;
+  --summary-panel-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+  --summary-panel-z-index: 100;
 }
 
 /* ==========================================================================
@@ -408,4 +421,121 @@
 .error-boundary__retry:hover {
   background: var(--panel-warn);
   color: var(--panel-bg);
+}
+
+/* ==========================================================================
+   Parameter Summary Panel Styles
+   ========================================================================== */
+
+/* Animation for panel appearance */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.parameter-summary-panel {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Summary Panel Item Hover Effect */
+.parameter-item {
+  transition: all 0.2s ease;
+}
+
+.parameter-item:hover {
+  background-color: rgba(123, 223, 242, 0.15);
+  border-color: rgba(123, 223, 242, 0.35);
+  transform: translateY(-2px);
+}
+
+/* Highlight active parameters */
+.parameter-active {
+  border-color: #7bdff2;
+  background-color: rgba(123, 223, 242, 0.12);
+}
+
+/* Text truncation for long values */
+.parameter-value-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Summary panel scrollbar styling */
+.summary-panel-scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(123, 223, 242, 0.3) rgba(8, 32, 50, 0.5);
+}
+
+.summary-panel-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.summary-panel-scrollable::-webkit-scrollbar-track {
+  background: rgba(8, 32, 50, 0.5);
+}
+
+.summary-panel-scrollable::-webkit-scrollbar-thumb {
+  background: rgba(123, 223, 242, 0.3);
+  border-radius: 3px;
+}
+
+.summary-panel-scrollable::-webkit-scrollbar-thumb:hover {
+  background: rgba(123, 223, 242, 0.5);
+}
+
+/* Grid responsiveness */
+@supports (display: grid) {
+  .parameter-grid {
+    gap: clamp(0.5rem, 2vw, 1rem);
+  }
+}
+
+/* Responsive breakpoints */
+@media (max-height: 600px) {
+  :root {
+    --summary-panel-height: 20vh;
+    --summary-panel-min-height: 100px;
+  }
+}
+
+@media (max-height: 400px) {
+  :root {
+    --summary-panel-height: 25vh;
+  }
+}
+
+/* Mobile/tablet optimizations */
+@media (max-width: 768px) {
+  :root {
+    --summary-panel-min-height: 100px;
+  }
+}
+
+/* Ensure text readability on smaller screens */
+@media (max-width: 500px) {
+  .parameter-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Adjust CesiumViewer container height to accommodate summary panel */
+@media (min-height: 600px) {
+  .cesium-viewer-container {
+    height: calc(100vh - var(--summary-panel-height));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parameter-summary-panel,
+  .parameter-item {
+    animation: none;
+    transition: none;
+  }
 }

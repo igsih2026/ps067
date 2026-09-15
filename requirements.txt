@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+xarray
+netCDF4
+numpy
+scipy
+scikit-image
+pandas
+pydantic
+matplotlib
+apscheduler

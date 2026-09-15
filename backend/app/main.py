@@ -27,6 +27,13 @@ app.include_router(route_analysis.router, prefix="/api/analysis", tags=["Ocean A
 
 
 
+@app.on_event("shutdown")
+def shutdown_event():
+    import logging
+    from app.cache.dataset_cache import dataset_cache
+    logging.info("Shutting down... closing all open xarray file handles.")
+    dataset_cache.close_all()
+
 @app.get("/")
 def root():
     return {"status": "ok", "message": "TRITON API is running. Check /docs for documentation."}

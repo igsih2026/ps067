@@ -11,6 +11,12 @@ def get_variables():
     meta_list = [registry.get_variable_metadata(v) for v in vars_list]
     return VariablesResponse(variables=meta_list)
 
+@router.post("/registry/refresh")
+def refresh_registry():
+    """Dynamically rescan the raw data directory for new NetCDF files."""
+    registry.refresh()
+    return {"status": "ok", "message": "Registry rescanned successfully", "variables": registry.list_variables()}
+
 @router.get("/datasets", response_model=DatasetsResponse)
 def get_datasets():
     """Returns all registered datasets and which variables they provide."""

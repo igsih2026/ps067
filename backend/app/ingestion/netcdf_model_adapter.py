@@ -7,11 +7,12 @@ from pathlib import Path
 
 class NetCDFModelAdapter:
     def __init__(self, filepath: str):
+        from app.cache.dataset_cache import dataset_cache
         self.filepath = Path(filepath)
         if not self.filepath.exists():
             raise FileNotFoundError(f"Model file not found: {filepath}")
-        # lazy load -- doesn't pull whole file into memory yet
-        self.ds = xr.open_dataset(self.filepath)
+        # Uses cache to keep handles open for multiple variables in same file
+        self.ds = dataset_cache.get_dataset(self.filepath)
 
     def get_variables(self) -> list[str]:
         # e.g. ["thetao"] for a temperature file
@@ -63,4 +64,5 @@ class NetCDFModelAdapter:
         return self.ds
 
     def close(self):
-        self.ds.close()
+        # Do not close the file handle here; it is managed by dataset_cache
+        pass
